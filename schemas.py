@@ -1,48 +1,40 @@
 """
-Database Schemas
+Database Schemas for Hospital Management
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model maps to a MongoDB collection using the lowercase
+class name as the collection name (e.g., Appointment -> "appointment").
 """
+from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
+from datetime import datetime
 
-# Example schemas (replace with your own):
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Patient(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=80, description="Patient first name")
+    last_name: str = Field(..., min_length=1, max_length=80, description="Patient last name")
+    email: Optional[EmailStr] = Field(None, description="Contact email")
+    phone: Optional[str] = Field(None, min_length=7, max_length=20, description="Contact phone")
+    dob: Optional[str] = Field(None, description="Date of birth (YYYY-MM-DD)")
+    blood_group: Optional[str] = Field(None, description="Blood group e.g., O+, A-")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Doctor(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=80)
+    last_name: str = Field(..., min_length=1, max_length=80)
+    department: str = Field(..., min_length=2, max_length=120)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, min_length=7, max_length=20)
+    on_duty: bool = Field(True, description="Whether the doctor is currently on duty")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+
+class Appointment(BaseModel):
+    name: str = Field(..., min_length=1, max_length=160, description="Patient full name (quick booking)")
+    email: EmailStr
+    phone: str = Field(..., min_length=7, max_length=20)
+    department: str = Field(..., min_length=2, max_length=120)
+    date: str = Field(..., description="Preferred date YYYY-MM-DD")
+    notes: Optional[str] = Field(None, max_length=500)
+    status: str = Field("requested", description="requested|confirmed|completed|cancelled")
+    created_for: Optional[datetime] = Field(None, description="Planned datetime if allocated")
